@@ -98,7 +98,6 @@ The confidence switching ensemble outperforms all standard ensemble approaches b
 
 ```
 equity-return-forecasting-framework/
-│
 ├── notebook.ipynb          # Main notebook - full pipeline
 ├── data_stocks.csv         # Sector basket closing prices
 └── README.md
