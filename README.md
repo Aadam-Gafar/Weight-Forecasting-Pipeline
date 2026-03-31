@@ -1,83 +1,76 @@
-# Equity Return Forecasting Framework
+# Weight Forecasting for Athletes Using Nutrition Data
 
-> A modular, stock-agnostic pipeline for forecasting target equity returns using sector-wide signals.
+> A time-series forecasting pipeline for predicting weight change from daily nutrition tracking.
 
-**Demonstrated on:** Nvidia (NVDA) within the semiconductor ecosystem  
-**Best result:** 75.86% directional accuracy (p < 0.001) | 72.81% under walk-forward validation across 114 weekly steps
+**Use Case:** Boxing weight cuts - forecast weight trajectory to make weight safely on schedule  
+**Best Result:** 90.91% directional accuracy (p = 0.006) on test set | 74% average across walk-forward validation
 
 ---
 
 ## Overview
 
-This project investigates whether wider stock market behaviour of a sector basket carries statistically significant predictive power over a target equity's weekly returns and whether that signal can be operationalised into a useful forecasting framework.
+This project tests whether daily nutrition data (calories, macros, expenditure) carries statistically significant predictive power over weight change, and whether that signal can be operationalized for weight management.
 
-The answer is yes. The pipeline is designed to be transferable: the target equity and sector basket are user-defined parameters. Swap out Nvidia and semiconductors for any target equity and relevant sector, and the methodology follows.
+The answer is yes. The pipeline is designed to be transferable: users import their MacroFactor export, and the methodology follows.
 
 ---
 
 ## Results
 
-| Model | MAE | RMSE | Directional Accuracy |
+| Model | MAE (kg) | RMSE (kg) | Directional Accuracy |
 |---|---|---|---|
-| SARIMA (baseline) | - | - | N/A (null model) |
-| SARIMAX (daily) | 0.011255 | 0.017895 | 53.03% |
-| SARIMAX (weekly) | 0.036743 | 0.047096 | 72.41% |
-| XGBoost (weekly) | 0.046385 | 0.060773 | 62.07% |
-| Ensemble - Simple Average | 0.035354 | 0.045747 | 67.24% |
-| Ensemble - Weighted Average | 0.034674 | 0.045180 | 70.69% |
-| Ensemble - Stacking | 0.035375 | 0.045743 | 70.69% |
-| **Confidence Switching Ensemble** | **0.034863** | **0.043652** | **75.86%** |
-| Walk-Forward Validation | 0.037588 | 0.047422 | **72.81%** |
+| SARIMA (baseline) | 0.0255 | 0.0273 | 0.00% |
+| **SARIMAX** | **0.0240** | **0.0259** | **90.91%** |
+| XGBoost (single split) | 0.0004 | 0.0005 | 100.00% (overfitted) |
+| XGBoost (walk-forward) | 0.0062 | 0.0132 | 74.00% ± 35.6% |
 
-The confidence switching ensemble outperforms all standard ensemble approaches by dynamically selecting between SARIMAX and XGBoost based on forecast confidence - derived from out-of-fold predictions with no look-ahead.
+**Statistical Significance:** Binomial test p = 0.006 (99% confidence) - SARIMAX directional accuracy is not random chance.
+
+SARIMAX outperforms both baseline and XGBoost. XGBoost's high variance across folds (35.6% std) indicates instability; SARIMAX provides more reliable predictions.
 
 ---
 
 ## Pipeline
-
 ```
-[ Raw Sector Data ]
+[ MacroFactor Export ]
         |
         ▼
-[ Regime Analysis ]  -->  Identifies training windows
+[ Phase Detection ]     -->  Changepoint analysis identifies training phases
         |
         ▼
-[ PCA Reduction ]    -->  35 Features to 11 (80% Variance)
+[ Feature Selection ]   -->  Drop multicollinear features (Calories vs Deficit)
         |
         ▼
-[  Model Testing  ]  -->  SARIMA | SARIMAX | XGBoost
+[ Model Testing ]       -->  SARIMA | SARIMAX | XGBoost
         |
         ▼
-[ Final Ensemble  ]  -->  Confidence Switching Logic
-        |
-        ▼
-[   Validation    ]  -->  114-step Walk-Forward (p < 0.001)
+[ Validation ]          -->  Walk-forward CV (5 folds, 150 test obs)
 ```
 
 ---
 
 ## Key Methodological Decisions
 
-**Regime-based training window** - Binary Segmentation (via `ruptures`) identifies structural breakpoints in log-transformed cumulative returns, statistically grounding our chosen training boundary.
+**Phase-based training window** - Changepoint detection (via `ruptures`) identifies distinct training phases. Phase 1 (0.80x volatility ratio) selected for training due to clean deficit-response signal.
 
-**PCA with leakage prevention** - StandardScaler and PCA are fit exclusively on training data and applied to test data via transform only. Refitted at weekly frequency to reflect the different statistical structure of weekly returns.
+**Multicollinearity handling** - Calories dropped (r = 0.99 with Caloric Deficit) to prevent feature redundancy. Deficit retained as the fundamental thermodynamic driver.
 
-**Controlled experimental design** - ARIMA parameters are held constant between SARIMA and SARIMAX, ensuring any performance difference is attributable purely to the addition of sector features rather than different parameter selection.
+**Feature engineering rejected** - Lagged target variables (TARGET_lag1, TARGET_lag2) caused severe overfitting in XGBoost. Removed to ensure model learns from nutrition, not weight momentum.
 
-**Confidence switching ensemble** - Motivated by error decorrelation analysis. When SARIMAX's forecast magnitude exceeds an OOF-derived threshold, SARIMAX is used. Otherwise XGBoost is used. Threshold derived entirely from training data with no look-ahead.
+**Classical methods over ML** - SARIMAX (linear) outperformed XGBoost (non-linear) due to physiologically linear deficit-weight relationship. Added complexity introduced instability without benefit.
 
-**Walk-forward validation** - Expanding window retraining at every weekly step across 114 steps, simulating production use and confirming the static result is not overfitted to our test window.
+**Walk-forward validation** - 5-fold time-series CV revealed true performance (74% avg) vs. single-split optimism (90.91%). XGBoost variance across folds (35.6% std) confirmed instability.
 
 ---
 
-## Adapting to Your Own Target Equity
+## Adapting to Your Own Data
 
-1. Replace `data_stocks.csv` with your sector basket (closing prices)
-2. Replace Nvidia with your own target equity throughout the notebook
+1. Export data from MacroFactor (`.xlsx` format with Calories & Macros, Weight Trend, Expenditure sheets)
+2. Replace `macrofactor_data.xlsx` with your export
 3. Set `USE_DRIVE = False` if running locally
-4. Re-run the elbow plot to select an appropriate number of breakpoints for your data
-5. Interpret era labels through the lens of your sector's history
-6. Adjust `m` in `auto_arima` if using a different resampling frequency (`m=5` daily, `m=4` weekly)
+4. Re-run changepoint detection to identify your training phases
+5. Adjust `modeling_start_date` based on your phase analysis
+6. Interpret results in context of your training regimen (cut/bulk/maintenance)
 
 ---
 
@@ -85,29 +78,34 @@ The confidence switching ensemble outperforms all standard ensemble approaches b
 
 | Category | Libraries |
 |---|---|
-| Data | `pandas`, `numpy` |
-| EDA & Visualisation | `plotly`, `ruptures` |
+| Data | `pandas`, `numpy`, `openpyxl` |
+| EDA & Visualization | `plotly`, `ruptures` |
 | Statistical Models | `statsmodels` (SARIMAX), `pmdarima` (auto_arima) |
-| Machine Learning | `scikit-learn` (PCA, GridSearchCV, TimeSeriesSplit), `xgboost` |
-| Validation | `scipy.stats` (binomial test, Shapiro-Wilk), `statsmodels` (Ljung-Box) |
-| Notebook | `itables`, Google Colab |
+| Machine Learning | `scikit-learn` (StandardScaler, GridSearchCV, TimeSeriesSplit), `xgboost` |
+| Validation | `scipy.stats` (binomial test) |
 
 ---
 
 ## Project Structure
-
 ```
-equity-return-forecasting-framework/
-├── notebook.ipynb          # Main notebook - full pipeline
-├── data_stocks.csv         # Sector basket closing prices
+weight-forecasting-macrofactor/
+├── notebook.ipynb              # Main notebook - full pipeline
+├── macrofactor_data.xlsx       # User's MacroFactor export
 └── README.md
 ```
 
 ---
 
+## Limitations
+
+- **Small dataset:** 190 logged days, 11-observation test set limits statistical power
+- **Single individual:** Metabolic adaptation and physiology vary; results may not generalize
+- **Phase-dependent:** Performance varies by training phase (74% average, 35.6% std across folds)
+
+---
+
 ## Author
 
-**Aadam Gafar**  
-[linkedin.com/in/agafar](https://linkedin.com/in/agafar) · [github.com/Aadam-Gafar](https://github.com/Aadam-Gafar)
+**Aadam Gafar** | [linkedin.com/in/agafar](https://linkedin.com/in/agafar) | [github.com/Aadam-Gafar](https://github.com/Aadam-Gafar)
 
 *BSc Physics, University of Glasgow · Career Accelerator in Data Science & ML, University of Cambridge ICE*
