@@ -96,6 +96,41 @@ weight-forecasting-macrofactor/
 
 ---
 
+## Production Considerations
+
+The notebook includes a production section that operationalizes the model for real-world athlete use. Key safeguards and features:
+
+### Safety: Weight Clipping (Required)
+Daily weight change forecasts are hard-constrained to **±0.25% of current bodyweight per day**. Without this, an unconstrained model can generate physiologically impossible outputs (e.g., −30.5 kg in 60 days). Clipping brings this to −22.8 kg — still inadvisable, but physiologically bounded. The 7.6 kg difference is critical for athlete safety.
+
+```python
+max_daily_change = current_weight * 0.0025
+predictions_clipped = np.clip(predictions, -max_daily_change, max_daily_change)
+```
+
+### Phase-Specific Training (Recommended)
+Train only on data from the most recently detected phase (breakpoint-to-present). Falls back to the last 30 days if fewer than 14 days of phase data are available. Recommended retraining cadence: weekly.
+
+### User Contextualisation
+Takes current weight, target weight, and deadline as inputs. Forecasts weight at deadline and returns a traffic-light status:
+
+| Status | Condition |
+|---|---|
+| Green | ≤ 0.5 kg gap to target |
+| Yellow | ≤ 1.5 kg gap |
+| Red | > 1.5 kg gap |
+
+Also outputs the required daily caloric deficit adjustment to close any gap (using the 7,700 kcal/kg conversion).
+
+### Data Quality Checks
+- Flags missing nutrition logs (streaks > 3 days)
+- Flags unusual single-day weight swings (> 2.5% of bodyweight)
+
+### Health Disclaimer
+Any deployed version must surface a notice that forecasts do not constitute medical or health advice.
+
+---
+
 ## Limitations
 
 - **Small dataset:** 190 logged days, 11-observation test set limits statistical power
