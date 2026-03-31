@@ -106,7 +106,6 @@ weight-forecasting-macrofactor/
 
 ## Author
 
-**Aadam Gafar**  
-[linkedin.com/in/agafar](https://linkedin.com/in/agafar) · [github.com/Aadam-Gafar](https://github.com/Aadam-Gafar)
+**Aadam Gafar** | [linkedin.com/in/agafar](https://linkedin.com/in/agafar) | [github.com/Aadam-Gafar](https://github.com/Aadam-Gafar)
 
 *BSc Physics, University of Glasgow · Career Accelerator in Data Science & ML, University of Cambridge ICE*
