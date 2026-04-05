@@ -25,15 +25,6 @@ This prototype was built to explore:
 - **Model Generalization**: Current SARIMAX configuration optimized for the original training dataset; performs inconsistently on diverse input patterns (planned: hyperparameter tuning, ensemble methods, or alternative architectures)
 - **Code Quality**: Contains exploratory code, minimal documentation, and vibecoded sections prioritizing speed over maintainability
 
-## Why This Exists
-
-I'm transitioning from support engineering to data science and wanted to demonstrate:
-1. **End-to-end capability**: Taking research code (notebook) to a deployable artifact (desktop app)
-2. **Product thinking**: Understanding user workflows beyond model accuracy
-3. **Technical breadth**: Comfort across backend logic, UI integration, and data pipelines
-
-This prototype validates the technical feasibility before investing in production-grade implementation.
-
 ## Repository Structure
 
 ```
@@ -121,13 +112,3 @@ I believe in transparent development. This branch shows:
 - **Learning velocity**: Comfortable with rapid skill acquisition (PyQt6, desktop patterns)
 
 Professional work would follow rigorous code review, testing standards, and design iteration. This prototype demonstrates the technical foundation upon which production-quality work is built.
-
-## Contact
-
-For questions about this project or my transition to data science, reach out via:
-- **LinkedIn**: [Your LinkedIn]
-- **Email**: [Your Email]
-
----
-
-**Note to recruiters/hiring managers**: This is a development branch. For polished portfolio work, see the main branch's Jupyter notebook analysis demonstrating statistical rigor, validation methodology, and research documentation.
