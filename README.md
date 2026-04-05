@@ -101,14 +101,14 @@ weight-forecasting-macrofactor/
 The notebook includes a production section that operationalizes the model for real-world athlete use. Key safeguards and features:
 
 ### Safety: Weight Clipping (Required)
-Daily weight change forecasts are hard-constrained to **±0.25% of current bodyweight per day**. Without this, an unconstrained model can generate physiologically impossible outputs (e.g., −30.5 kg in 60 days). Clipping brings this to −22.8 kg — still inadvisable, but physiologically bounded. The 7.6 kg difference is critical for athlete safety.
+Daily weight change forecasts are hard-constrained to **±0.25% of current bodyweight per day**. Without this, an unconstrained model can generate physiologically impossible outputs (e.g., −30.5 kg in 60 days). Clipping brings this to −22.8 kg - still inadvisable, but physiologically bounded. The 7.6 kg difference is critical for athlete safety.
 
 ```python
 max_daily_change = current_weight * 0.0025
 predictions_clipped = np.clip(predictions, -max_daily_change, max_daily_change)
 ```
 
-### Phase-Specific Training (Recommended)
+### Phase-Specific Training
 Train only on data from the most recently detected phase (breakpoint-to-present). Falls back to the last 30 days if fewer than 14 days of phase data are available. Recommended retraining cadence: weekly.
 
 ### User Contextualisation
@@ -129,13 +129,17 @@ Also outputs the required daily caloric deficit adjustment to close any gap (usi
 ### Health Disclaimer
 Any deployed version must surface a notice that forecasts do not constitute medical or health advice.
 
+### Expanded Import Capabilities
+Ideally, the app would go on to accept exports from other major calorie tracking platforms, as well as custom data inputs - including tab/comma-separated files, CSVs, JSON, and other common file formats. This would broaden the potential user base significantly and increase the utility of the app beyond MacroFactor users. It would also make large-scale data collection far more accessible, which has direct implications for model quality (see Limitations).
+
 ---
 
 ## Limitations
 
-- **Small dataset:** 190 logged days, 11-observation test set limits statistical power
+- **Small dataset:** 190 logged days, 11-observation test set limits statistical power. The model is trained on an extremely limited dataset - my own personal logs - due to the lack of openly accessible MacroFactor export data. To be considered viable in production, a far more substantive dataset would be required. Expanding import capabilities (as outlined in the Production Considerations section) would make this data collection significantly more feasible.
 - **Single individual:** Metabolic adaptation and physiology vary; results may not generalize
 - **Phase-dependent:** Performance varies by training phase (74% average, 35.6% std across folds)
+- **Proof of concept:** This notebook demonstrates that the signal exists and can be operationalized. It is not production-ready as-is, but provides a validated foundation that can be taken into production with the considerations outlined above.
 
 ---
 
