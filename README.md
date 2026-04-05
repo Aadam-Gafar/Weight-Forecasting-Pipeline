@@ -1,146 +1,133 @@
-# Weight Forecasting for Athletes Using Nutrition Data
+# WeightForecaster Desktop App (Prototype)
 
-> A time-series forecasting pipeline for predicting weight change from daily nutrition tracking.
-
-**Use Case:** Boxing weight cuts - forecast weight trajectory to make weight safely on schedule  
-**Best Result:** 90.91% directional accuracy (p = 0.006) on test set | 74% average across walk-forward validation
-
----
+> **⚠️ Early Development Branch**: This branch contains a rapid prototype of the desktop application. It is not production-ready and is shared here for development transparency and version control purposes.
 
 ## Overview
 
-This project tests whether daily nutrition data (calories, macros, expenditure) carries statistically significant predictive power over weight change, and whether that signal can be operationalized for weight management.
+WeightForecaster is a desktop application that converts the SARIMAX-based weight forecasting model from my [Jupyter notebook analysis](link-to-notebook) into a standalone Windows GUI tool for combat sports athletes planning weight cuts.
 
-The answer is yes. The pipeline is designed to be transferable: users import their MacroFactor export, and the methodology follows.
+This prototype was built to explore:
+- PyQt6 desktop UI patterns for scientific computing applications
+- Integration of statsmodels SARIMAX models into interactive tools
+- Real-time validation and error handling for user inputs
+- Data visualization with Plotly in native desktop applications
 
----
+## Current Status: Prototype
 
-## Results
+**What this branch represents:**
+- A functional proof-of-concept demonstrating the core forecasting workflow
+- Rapid iteration on UI/UX patterns (not final design)
+- Initial model integration (requires refinement for broader datasets)
+- Development sandbox for testing architecture decisions
 
-| Model | MAE (kg) | RMSE (kg) | Directional Accuracy |
-|---|---|---|---|
-| SARIMA (baseline) | 0.0255 | 0.0273 | 0.00% |
-| **SARIMAX** | **0.0240** | **0.0259** | **90.91%** |
-| XGBoost (single split) | 0.0004 | 0.0005 | 100.00% (overfitted) |
-| XGBoost (walk-forward) | 0.0062 | 0.0132 | 74.00% ± 35.6% |
+**Known limitations:**
+- **UI Design**: Minimal styling, placeholder layouts — aesthetic polish deferred to post-validation phase
+- **Model Generalization**: Current SARIMAX configuration optimized for the original training dataset; performs inconsistently on diverse input patterns (planned: hyperparameter tuning, ensemble methods, or alternative architectures)
+- **Code Quality**: Contains exploratory code, minimal documentation, and vibecoded sections prioritizing speed over maintainability
 
-**Statistical Significance:** Binomial test p = 0.006 (99% confidence) - SARIMAX directional accuracy is not random chance.
+## Why This Exists
 
-SARIMAX outperforms both baseline and XGBoost. XGBoost's high variance across folds (35.6% std) indicates instability; SARIMAX provides more reliable predictions.
+I'm transitioning from support engineering to data science and wanted to demonstrate:
+1. **End-to-end capability**: Taking research code (notebook) to a deployable artifact (desktop app)
+2. **Product thinking**: Understanding user workflows beyond model accuracy
+3. **Technical breadth**: Comfort across backend logic, UI integration, and data pipelines
 
----
+This prototype validates the technical feasibility before investing in production-grade implementation.
 
-## Pipeline
+## Repository Structure
+
 ```
-[ MacroFactor Export ]
-        |
-        ▼
-[ Phase Detection ]     -->  Changepoint analysis identifies training phases
-        |
-        ▼
-[ Feature Selection ]   -->  Drop multicollinear features (Calories vs Deficit)
-        |
-        ▼
-[ Model Testing ]       -->  SARIMA | SARIMAX | XGBoost
-        |
-        ▼
-[ Validation ]          -->  Walk-forward CV (5 folds, 150 test obs)
-```
-
----
-
-## Key Methodological Decisions
-
-**Phase-based training window** - Changepoint detection (via `ruptures`) identifies distinct training phases. Phase 1 (0.80x volatility ratio) selected for training due to clean deficit-response signal.
-
-**Multicollinearity handling** - Calories dropped (r = 0.99 with Caloric Deficit) to prevent feature redundancy. Deficit retained as the fundamental thermodynamic driver.
-
-**Feature engineering rejected** - Lagged target variables (TARGET_lag1, TARGET_lag2) caused severe overfitting in XGBoost. Removed to ensure model learns from nutrition, not weight momentum.
-
-**Classical methods over ML** - SARIMAX (linear) outperformed XGBoost (non-linear) due to physiologically linear deficit-weight relationship. Added complexity introduced instability without benefit.
-
-**Walk-forward validation** - 5-fold time-series CV revealed true performance (74% avg) vs. single-split optimism (90.91%). XGBoost variance across folds (35.6% std) confirmed instability.
-
----
-
-## Adapting to Your Own Data
-
-1. Export data from MacroFactor (`.xlsx` format with Calories & Macros, Weight Trend, Expenditure sheets)
-2. Replace `macrofactor_data.xlsx` with your export
-3. Set `USE_DRIVE = False` if running locally
-4. Re-run changepoint detection to identify your training phases
-5. Adjust `modeling_start_date` based on your phase analysis
-6. Interpret results in context of your training regimen (cut/bulk/maintenance)
-
----
-
-## Stack
-
-| Category | Libraries |
-|---|---|
-| Data | `pandas`, `numpy`, `openpyxl` |
-| EDA & Visualization | `plotly`, `ruptures` |
-| Statistical Models | `statsmodels` (SARIMAX), `pmdarima` (auto_arima) |
-| Machine Learning | `scikit-learn` (StandardScaler, GridSearchCV, TimeSeriesSplit), `xgboost` |
-| Validation | `scipy.stats` (binomial test) |
-
----
-
-## Project Structure
-```
-weight-forecasting-macrofactor/
-├── notebook.ipynb              # Main notebook - full pipeline
-├── macrofactor_data.xlsx       # User's MacroFactor export
-└── README.md
+WeightForecaster/
+├── backend/              # Core forecasting engine
+│   ├── models.py         # Data classes (ValidationResult, ForecastResult)
+│   ├── data_loader.py    # MacroFactor XLSX import
+│   ├── validator.py      # Data quality checks
+│   ├── phase_detector.py # Changepoint detection (ruptures)
+│   ├── forecaster.py     # SARIMAX training & prediction
+│   └── safety.py         # Physiological constraints
+├── ui/                   # PyQt6 interface
+│   ├── state_manager.py  # Application state & signals
+│   └── forecast_worker.py # Background thread for model training
+└── main.py               # Entry point
 ```
 
----
+## Technical Stack
 
-## Production Considerations
+- **Modeling**: statsmodels SARIMAX, ruptures (changepoint detection)
+- **UI**: PyQt6, PyQt6-WebEngine (for Plotly charts)
+- **Data**: pandas, numpy
+- **Validation**: scikit-learn (preprocessing)
 
-The notebook includes a production section that operationalizes the model for real-world athlete use. Key safeguards and features:
+## Original Notebook Performance
 
-### Safety: Weight Clipping (Required)
-Daily weight change forecasts are hard-constrained to **±0.25% of current bodyweight per day**. Without this, an unconstrained model can generate physiologically impossible outputs (e.g., −30.5 kg in 60 days). Clipping brings this to −22.8 kg — still inadvisable, but physiologically bounded. The 7.6 kg difference is critical for athlete safety.
+The research notebook (trained on controlled personal dataset) achieved:
+- **90.91% directional accuracy** under walk-forward validation
+- **p-value: 0.006** for trend weight predictions
+- Clean Phase 1 data (identified via changepoint detection)
 
-```python
-max_daily_change = current_weight * 0.0025
-predictions_clipped = np.clip(predictions, -max_daily_change, max_daily_change)
+Current prototype model performance degrades on datasets with:
+- Multiple overlapping training phases
+- High variance in caloric intake patterns  
+- Limited logged nutrition days (<80% completeness)
+
+## Next Steps (Post-Prototype)
+
+**If validated for production:**
+
+1. **Model Improvements**
+   - Grid search for optimal SARIMAX orders per dataset characteristics
+   - Feature engineering: rolling averages, lagged deficit terms
+   - Fallback to simpler linear models for sparse data
+
+2. **UI Refinement**
+   - Professional design system (color scheme, typography, spacing)
+   - Responsive layouts, accessibility features
+   - Comprehensive error messaging and user guidance
+
+3. **Code Quality**
+   - Type hints throughout codebase
+   - Unit tests for backend modules (target 80%+ coverage)
+   - Documentation (docstrings, architecture diagrams)
+   - Refactor for maintainability
+
+4. **Distribution**
+   - PyInstaller packaging for .exe
+   - Installer with proper error handling
+   - Crash reporting and logging
+
+## Running the Prototype
+
+**Requirements:**
+- Python 3.10+
+- Windows (PyQt6-WebEngine dependency)
+
+**Setup:**
+```bash
+pip install -r requirements.txt
+python main.py
 ```
 
-### Phase-Specific Training (Recommended)
-Train only on data from the most recently detected phase (breakpoint-to-present). Falls back to the last 30 days if fewer than 14 days of phase data are available. Recommended retraining cadence: weekly.
+**Expected workflow:**
+1. Import MacroFactor XLSX export
+2. Review auto-detected training phase
+3. Set target weight and competition date
+4. Generate forecast (model trains in background thread)
 
-### User Contextualisation
-Takes current weight, target weight, and deadline as inputs. Forecasts weight at deadline and returns a traffic-light status:
+## Why I'm Sharing This
 
-| Status | Condition |
-|---|---|
-| Green | ≤ 0.5 kg gap to target |
-| Yellow | ≤ 1.5 kg gap |
-| Red | > 1.5 kg gap |
+I believe in transparent development. This branch shows:
+- **Iterative process**: Real projects evolve through messy prototypes
+- **Prioritization**: Validating feasibility before premature optimization
+- **Learning velocity**: Comfortable with rapid skill acquisition (PyQt6, desktop patterns)
 
-Also outputs the required daily caloric deficit adjustment to close any gap (using the 7,700 kcal/kg conversion).
+Professional work would follow rigorous code review, testing standards, and design iteration. This prototype demonstrates the technical foundation upon which production-quality work is built.
 
-### Data Quality Checks
-- Flags missing nutrition logs (streaks > 3 days)
-- Flags unusual single-day weight swings (> 2.5% of bodyweight)
+## Contact
 
-### Health Disclaimer
-Any deployed version must surface a notice that forecasts do not constitute medical or health advice.
-
----
-
-## Limitations
-
-- **Small dataset:** 190 logged days, 11-observation test set limits statistical power
-- **Single individual:** Metabolic adaptation and physiology vary; results may not generalize
-- **Phase-dependent:** Performance varies by training phase (74% average, 35.6% std across folds)
+For questions about this project or my transition to data science, reach out via:
+- **LinkedIn**: [Your LinkedIn]
+- **Email**: [Your Email]
 
 ---
 
-## Author
-
-**Aadam Gafar** | [linkedin.com/in/agafar](https://linkedin.com/in/agafar) | [github.com/Aadam-Gafar](https://github.com/Aadam-Gafar)
-
-*BSc Physics, University of Glasgow · Career Accelerator in Data Science & ML, University of Cambridge ICE*
+**Note to recruiters/hiring managers**: This is a development branch. For polished portfolio work, see the main branch's Jupyter notebook analysis demonstrating statistical rigor, validation methodology, and research documentation.
