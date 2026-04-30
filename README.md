@@ -9,9 +9,9 @@
 
 ## Overview
 
-This project tests whether daily nutrition data (calories, macros, expenditure) carries statistically significant predictive power over weight change, and whether that signal can be operationalized for weight management.
+This project tests whether daily nutrition data (calories, macros, expenditure) carries statistically significant predictive power over weight change, and whether that signal can be operationalised for weight management.
 
-The answer is yes. The pipeline is designed to be transferable: users import their MacroFactor export, and the methodology follows.
+The answer is yes. The pipeline is designed to be transferable: users import their nutritional data export (sourced from the MacroFactor app), and the methodology follows.
 
 ---
 
@@ -98,7 +98,7 @@ weight-forecasting-macrofactor/
 
 ## Production Considerations
 
-The notebook includes a production section that operationalizes the model for real-world athlete use. Key safeguards and features:
+The notebook includes a production section that operationalises the model for real-world athlete use. Key safeguards and features:
 
 ### Safety: Weight Clipping (Required)
 Daily weight change forecasts are hard-constrained to **±0.25% of current bodyweight per day**. Without this, an unconstrained model can generate physiologically impossible outputs (e.g., −30.5 kg in 60 days). Clipping brings this to −22.8 kg - still inadvisable, but physiologically bounded. The 7.6 kg difference is critical for athlete safety.
@@ -116,9 +116,9 @@ Takes current weight, target weight, and deadline as inputs. Forecasts weight at
 
 | Status | Condition |
 |---|---|
-| Green | ≤ 0.5 kg gap to target |
-| Yellow | ≤ 1.5 kg gap |
-| Red | > 1.5 kg gap |
+| 🟢 Green | ≤ 0.5 kg gap to target |
+| 🟡 Yellow | ≤ 1.5 kg gap |
+| 🔴 Red | > 1.5 kg gap |
 
 Also outputs the required daily caloric deficit adjustment to close any gap (using the 7,700 kcal/kg conversion).
 
@@ -137,9 +137,9 @@ Ideally, the app would go on to accept exports from other major calorie tracking
 ## Limitations
 
 - **Small dataset:** 190 logged days, 11-observation test set limits statistical power. The model is trained on an extremely limited dataset - my own personal logs - due to the lack of openly accessible MacroFactor export data. To be considered viable in production, a far more substantive dataset would be required. Expanding import capabilities (as outlined in the Production Considerations section) would make this data collection significantly more feasible.
-- **Single individual:** Metabolic adaptation and physiology vary; results may not generalize
+- **Single individual:** Metabolic adaptation and physiology vary; results may not generalise
 - **Phase-dependent:** Performance varies by training phase (74% average, 35.6% std across folds)
-- **Proof of concept:** This notebook demonstrates that the signal exists and can be operationalized. It is not production-ready as-is, but provides a validated foundation that can be taken into production with the considerations outlined above.
+- **Proof of concept:** This notebook demonstrates that the signal exists and can be operationalised. It is not production-ready as-is, but provides a validated foundation that can be taken into production with the considerations outlined above.
 
 ---
 
@@ -147,4 +147,4 @@ Ideally, the app would go on to accept exports from other major calorie tracking
 
 **Aadam Gafar** | [linkedin.com/in/agafar](https://linkedin.com/in/agafar) | [github.com/Aadam-Gafar](https://github.com/Aadam-Gafar)
 
-*BSc Physics, University of Glasgow · Career Accelerator in Data Science & ML, University of Cambridge ICE*
+*BSc Physics, University of Glasgow · Career Accelerator in Data Science & ML, University of Cambridge PACE*
